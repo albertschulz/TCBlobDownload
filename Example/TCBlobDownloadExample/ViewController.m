@@ -47,7 +47,7 @@
     [self.sharedDownloadManager startDownloadWithURL:[NSURL URLWithString:self.urlField.text]
                                           customPath:[NSString pathWithComponents:@[NSTemporaryDirectory(), @"example"]]
                                        firstResponse:NULL
-                                            progress:^(float receivedLength, float totalLength, NSInteger remainingTime) {
+                                            progress:^(float receivedLength, float totalLength, NSInteger remainingTime, float progress) {
                                                 if (remainingTime != -1) {
                                                     [self.remainingTime setText:[NSString stringWithFormat:@"%lds", (long)remainingTime]];
                                                 }

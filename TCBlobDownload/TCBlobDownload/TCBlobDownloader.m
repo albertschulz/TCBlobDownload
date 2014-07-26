@@ -21,10 +21,7 @@ NSString * const TCHTTPStatusCode = @"httpStatus";
 // Public
 @property (nonatomic, copy, readwrite) NSURL *downloadURL;
 @property (nonatomic, copy, readwrite) NSString *pathToFile;
-<<<<<<< HEAD
-=======
 @property (nonatomic, assign, readwrite) TCBlobDownloadState state;
->>>>>>> FETCH_HEAD
 // Download
 @property (nonatomic, strong) NSURLConnection *connection;
 @property (nonatomic, strong) NSMutableData *receivedDataBuffer;
@@ -197,11 +194,7 @@ NSString * const TCHTTPStatusCode = @"httpStatus";
 
 - (void)connection:(NSURLConnection*)connection didReceiveResponse:(NSURLResponse *)response
 {
-<<<<<<< HEAD
-
-=======
     self.state = TCBlobDownloadStateDownloading;
->>>>>>> FETCH_HEAD
     
     self.expectedDataLength = [response expectedContentLength];
     NSHTTPURLResponse *httpUrlResponse = (NSHTTPURLResponse *)response;
@@ -324,11 +317,7 @@ NSString * const TCHTTPStatusCode = @"httpStatus";
 
 - (void)notifyFromError:(NSError *)error
 {
-<<<<<<< HEAD
     _state = TCBlobDownloadStateFailed;
-=======
-    self.state = TCBlobDownloadStateFailed;
->>>>>>> FETCH_HEAD
     
     dispatch_async(dispatch_get_main_queue(), ^{
         if (self.errorBlock) {
@@ -342,9 +331,6 @@ NSString * const TCHTTPStatusCode = @"httpStatus";
 
 - (void)notifyFromCompletionWithSuccess:(BOOL)success pathToFile:(NSString *)pathToFile
 {
-<<<<<<< HEAD
-    _state = TCBlobDownloadStateDone;
-=======
     if (success) {
         self.state = TCBlobDownloadStateDone;
     }
@@ -356,7 +342,6 @@ NSString * const TCHTTPStatusCode = @"httpStatus";
             self.state = TCBlobDownloadStateCancelled;
         }
     }
->>>>>>> FETCH_HEAD
     
     dispatch_async(dispatch_get_main_queue(), ^{
         if (self.completeBlock) {
@@ -404,13 +389,9 @@ NSString * const TCHTTPStatusCode = @"httpStatus";
     if (_fileName) {
         return _fileName;
     }
-<<<<<<< HEAD
-    return [[NSURL URLWithString:[self.downloadURL absoluteString]] lastPathComponent];
-=======
     else {
         return [[NSURL URLWithString:[self.downloadURL absoluteString]] lastPathComponent];
     }
->>>>>>> FETCH_HEAD
 }
 
 - (NSString *)pathToFile
@@ -425,12 +406,6 @@ NSString * const TCHTTPStatusCode = @"httpStatus";
 
 - (float)progress
 {
-<<<<<<< HEAD
-    if (_expectedDataLength == 0)
-        return 0;
-    else
-        return _receivedDataLength / _expectedDataLength;
-=======
     return (_expectedDataLength == 0) ? 0 : (float)_receivedDataLength / (float)_expectedDataLength;
 }
 
@@ -439,7 +414,6 @@ NSString * const TCHTTPStatusCode = @"httpStatus";
     _error = error;
     
     self.state = TCBlobDownloadStateFailed;
->>>>>>> FETCH_HEAD
 }
 
 @end
