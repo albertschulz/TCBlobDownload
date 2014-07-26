@@ -7,6 +7,7 @@
 //
 
 #import "ViewController.h"
+#import "MultipleViewController.h"
 
 @implementation ViewController
 
@@ -37,21 +38,23 @@
 {
     // Delegate
     /*
-    [self.sharedDownloadManager startDownloadWithURL:self.urlField.text
+    [self.sharedDownloadManager startDownloadWithURL:[NSURL URLWithString:self.urlField.text]
                                           customPath:nil
-                                         andDelegate:self];
+                                            delegate:self];
     */
     
     // Blocks
     [self.sharedDownloadManager startDownloadWithURL:[NSURL URLWithString:self.urlField.text]
-                                          customPath:[NSString pathWithComponents:@[NSTemporaryDirectory(), @"test"]]
+                                          customPath:[NSString pathWithComponents:@[NSTemporaryDirectory(), @"example"]]
                                        firstResponse:NULL
                                             progress:^(float receivedLength, float totalLength, NSInteger remainingTime) {
                                                 if (remainingTime != -1) {
                                                     [self.remainingTime setText:[NSString stringWithFormat:@"%lds", (long)remainingTime]];
                                                 }
                                             }
-                                               error:NULL
+                                               error:^(NSError *error) {
+                                                   NSLog(@"%@", error);
+                                               }
                                             complete:^(BOOL downloadFinished, NSString *pathToFile) {
                                                 NSString *str = downloadFinished ? @"Completed" : @"Cancelled";
                                                 [self.remainingTime setText:str];
@@ -64,13 +67,21 @@
     [self.sharedDownloadManager cancelAllDownloadsAndRemoveFiles:YES];
 }
 
+- (IBAction)switchToMultipleDownloads:(id)sender
+{
+    MultipleViewController *multipleViewController = [MultipleViewController new];
+    
+    UINavigationController *navController = [[UINavigationController alloc] initWithRootViewController:multipleViewController];
+    
+    [self presentViewController:navController animated:YES completion:nil];
+}
 
 #pragma mark - TCBlobDownloaderDelegate
 
 
 - (void)download:(TCBlobDownloader *)blobDownload didReceiveFirstResponse:(NSURLResponse *)response
 {
-    
+
 }
 
 - (void)download:(TCBlobDownloader *)blobDownload
@@ -90,9 +101,9 @@
     
 }
 
-- (void)downloadDidFinishWithDownload:(TCBlobDownloader *)blobDownload
+- (void)download:(TCBlobDownloader *)blobDownload didFinishWithSucces:(BOOL)downloadFinished atPath:(NSString *)pathToFile
 {
-    
+
 }
 
 @end

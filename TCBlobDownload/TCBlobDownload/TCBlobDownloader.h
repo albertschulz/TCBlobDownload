@@ -46,6 +46,18 @@ typedef NS_ENUM(NSUInteger, TCBlobDownloadError) {
     TCErrorNotEnoughFreeDiskSpace
 };
 
+/**
+ The current state of the download.
+ 
+ */
+typedef NS_ENUM(NSUInteger, TCBlobDownloadState) {
+    TCBlobDownloadStateReady = 0,
+    TCBlobDownloadStateDownloading,
+    TCBlobDownloadStateDone,
+    TCBlobDownloadStateCancelled,
+    TCBlobDownloadStateFailed
+};
+
 @protocol TCBlobDownloaderDelegate;
 
 
@@ -97,7 +109,7 @@ typedef NS_ENUM(NSUInteger, TCBlobDownloadError) {
 @property (nonatomic, copy, readonly) NSURL *downloadURL;
 
 /**
- The file name, based on the last path component of the download URL.
+ If not manually set, the file name, based on the last path component of the download URL.
  
  ## Note
  
@@ -111,7 +123,11 @@ typedef NS_ENUM(NSUInteger, TCBlobDownloadError) {
  
  @since 1.0
  */
+<<<<<<< HEAD
 @property (nonatomic, copy, readwrite) NSString *fileName;
+=======
+@property (nonatomic, copy) NSString *fileName;
+>>>>>>> FETCH_HEAD
 
 /**
  The current speed of the download in bits/sec. This property updates itself regularly so you can retrieve it on a regular interval to update your UI.
@@ -130,10 +146,22 @@ typedef NS_ENUM(NSUInteger, TCBlobDownloadError) {
 @property (nonatomic, assign, readonly) NSInteger remainingTime;
 
 /**
+<<<<<<< HEAD
  The current progress of the file download. Value between 0 and 1.
  */
 @property (nonatomic, assign, readonly) float progress;
 
+=======
+ Current progress of the download.
+ 
+ Value between 0 and 1
+ */
+@property (nonatomic, assign, readonly) float progress;
+
+/**
+ Current state of the download.
+ */
+>>>>>>> FETCH_HEAD
 @property (nonatomic, assign, readonly) TCBlobDownloadState state;
 
 /**
@@ -170,7 +198,7 @@ typedef NS_ENUM(NSUInteger, TCBlobDownloadError) {
 - (instancetype)initWithURL:(NSURL *)url
                downloadPath:(NSString *)pathToDL
               firstResponse:(void (^)(NSURLResponse *response))firstResponseBlock
-                   progress:(void (^)(float receivedLength, float totalLength, NSInteger remainingTime))progressBlock
+                   progress:(void (^)(float receivedLength, float totalLength, NSInteger remainingTime, float progress))progressBlock
                       error:(void (^)(NSError *error))errorBlock
                    complete:(void (^)(BOOL downloadFinished, NSString *pathToFile))completeBlock;
 
@@ -227,7 +255,8 @@ typedef NS_ENUM(NSUInteger, TCBlobDownloadError) {
  */
 - (void)download:(TCBlobDownloader *)blobDownload
   didReceiveData:(uint64_t)receivedLength
-         onTotal:(uint64_t)totalLength;
+         onTotal:(uint64_t)totalLength
+        progress:(float)progress;
 
 /**
  Optional. Called when an error occur during the download. If this method is called, the `TCBlobDownloader` will be automatically cancelled just after, without deleting the the already downloaded parts of the file. This is done by calling `cancelDownloadAndRemoveFile:`

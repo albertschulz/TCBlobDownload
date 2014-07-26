@@ -33,7 +33,7 @@ Requires **iOS 5.1.1 or later** and ARC.
 
 ## Documentation :books:
 
-Browse the documentation on [Cocoadocs](http://cocoadocs.org/docsets/TCBlobDownload/1.5.0/) or add it directly to Xcode by [downloading](https://github.com/thibaultCha/TCBlobDownload/blob/remaining-time/TCBlobDownload/Docs/TCBlobDownloadDocset.zip?raw=true) the docset and placing it into `~/Library/Developer/Shared/Documentation/DocSets/`. (or use [Dash](http://kapeli.com/dash))
+Browse the documentation on [Cocoadocs](http://cocoadocs.org/docsets/TCBlobDownload) or add it directly to Xcode by [downloading](https://github.com/thibaultCha/TCBlobDownload/blob/master/TCBlobDownload/Docs/TCBlobDownloadDocset.zip?raw=true) the docset and placing it into `~/Library/Developer/Shared/Documentation/DocSets/`. (or use [Dash](http://kapeli.com/dash))
 
 ## Installation
 
@@ -133,7 +133,10 @@ See [documentation](#documentation-books) for more details.
 
 ## Change log :memo:
 
-### v1.5 (8/04/2014)
+### v1.5.1 (7/04/2014)
+* Important fix for [#21](https://github.com/thibaultCha/TCBlobDownload/issues/21)
+
+### v1.5 (8/03/2014)
 * Improved documentation and created a docset
 * Added a `speedRate` and `remainingTime` (in seconds) property on `TCBlobDownloader` thanks to [#16](https://github.com/thibaultCha/TCBlobDownload/issues/16)
 * Updated `TCBlobDownloader` properties to `readonly`

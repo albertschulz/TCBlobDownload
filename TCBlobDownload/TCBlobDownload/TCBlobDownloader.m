@@ -6,7 +6,7 @@
 //
 
 static const double kBufferSize = 1024*1024; // 1 MB
-static const NSTimeInterval kDefaultTimeout = 30;
+static const NSTimeInterval kDefaultRequestTimeout = 30;
 static const NSInteger kNumberOfSamples = 5;
 static NSString * const kErrorDomain = @"com.thibaultcha.tcblobdownload";
 
@@ -15,14 +15,21 @@ NSString * const TCHTTPStatusCode = @"httpStatus";
 #import "TCBlobDownloader.h"
 #import "UIDevice-Hardware.h"
 
-@interface TCBlobDownloader ()
+@interface TCBlobDownloader () {
+    uint64_t previousTotal;
+}
 // Public
 @property (nonatomic, copy, readwrite) NSURL *downloadURL;
 @property (nonatomic, copy, readwrite) NSString *pathToFile;
+<<<<<<< HEAD
+=======
+@property (nonatomic, assign, readwrite) TCBlobDownloadState state;
+>>>>>>> FETCH_HEAD
 // Download
 @property (nonatomic, strong) NSURLConnection *connection;
 @property (nonatomic, strong) NSMutableData *receivedDataBuffer;
 @property (nonatomic, strong) NSFileHandle *file;
+@property (nonatomic, strong) NSError *error;
 // Speed rate and remaining time
 @property (nonatomic, strong) NSTimer *speedTimer;
 @property (nonatomic, strong) NSMutableArray *samplesOfDownloadedBytes;
@@ -32,7 +39,7 @@ NSString * const TCHTTPStatusCode = @"httpStatus";
 @property (nonatomic, assign, readwrite) NSInteger remainingTime;
 // Blocks
 @property (nonatomic, copy) void (^firstResponseBlock)(NSURLResponse *response);
-@property (nonatomic, copy) void (^progressBlock)(float receivedLength, float totalLength, NSInteger remainingTime);
+@property (nonatomic, copy) void (^progressBlock)(float receivedLength, float totalLength, NSInteger remainingTime, float progress);
 @property (nonatomic, copy) void (^errorBlock)(NSError *error);
 @property (nonatomic, copy) void (^completeBlock)(BOOL downloadFinished, NSString *pathToFile);
 - (void)notifyFromError:(NSError *)error;
@@ -42,7 +49,8 @@ NSString * const TCHTTPStatusCode = @"httpStatus";
 @end
 
 @implementation TCBlobDownloader
-
+@dynamic pathToFile;
+@dynamic remainingTime;
 
 #pragma mark - Dealloc
 
@@ -63,6 +71,7 @@ NSString * const TCHTTPStatusCode = @"httpStatus";
 {
     self = [super init];
     if (self) {
+        self.state = TCBlobDownloadStateReady;
         self.downloadURL = url;
         self.delegate = delegateOrNil;
         self.pathToDownloadDirectory = pathToDL;
@@ -74,12 +83,13 @@ NSString * const TCHTTPStatusCode = @"httpStatus";
 - (instancetype)initWithURL:(NSURL *)url
                downloadPath:(NSString *)pathToDL
               firstResponse:(void (^)(NSURLResponse *response))firstResponseBlock
-                   progress:(void (^)(float receivedLength, float totalLength, NSInteger remainingTime))progressBlock
+                   progress:(void (^)(float receivedLength, float totalLength, NSInteger remainingTime, float progress))progressBlock
                       error:(void (^)(NSError *error))errorBlock
                    complete:(void (^)(BOOL downloadFinished, NSString *pathToFile))completeBlock
 {
     self = [self initWithURL:url downloadPath:pathToDL delegate:nil];
     if (self) {
+        self.state = TCBlobDownloadStateReady;
         self.firstResponseBlock = firstResponseBlock;
         self.progressBlock = progressBlock;
         self.errorBlock = errorBlock;
@@ -97,7 +107,7 @@ NSString * const TCHTTPStatusCode = @"httpStatus";
 {
     NSMutableURLRequest *fileRequest = [NSMutableURLRequest requestWithURL:self.downloadURL
                                                                cachePolicy:NSURLRequestUseProtocolCachePolicy
-                                                           timeoutInterval:kDefaultTimeout];
+                                                           timeoutInterval:kDefaultRequestTimeout];
     
     // If we can't handle the request, better cancelling the operation right now
     if (![NSURLConnection canHandleRequest:fileRequest]) {
@@ -131,6 +141,7 @@ NSString * const TCHTTPStatusCode = @"httpStatus";
     [self.file seekToEndOfFile];
     _receivedDataBuffer = [[NSMutableData alloc] init];
     _samplesOfDownloadedBytes = [[NSMutableArray alloc] init];
+    previousTotal = 0;
     _connection = [[NSURLConnection alloc] initWithRequest:fileRequest
                                                   delegate:self
                                           startImmediately:NO];
@@ -178,13 +189,19 @@ NSString * const TCHTTPStatusCode = @"httpStatus";
                                              userInfo:@{ NSLocalizedDescriptionKey:[NSString stringWithFormat:@"Download failed for file: %@. Reason: %@",
                                                                                     self.fileName,
                                                                                     error.localizedDescription] }];
+    self.error = downloadError;
+    
     [self notifyFromError:downloadError];
     [self cancelDownloadAndRemoveFile:NO];
 }
 
 - (void)connection:(NSURLConnection*)connection didReceiveResponse:(NSURLResponse *)response
 {
+<<<<<<< HEAD
 
+=======
+    self.state = TCBlobDownloadStateDownloading;
+>>>>>>> FETCH_HEAD
     
     self.expectedDataLength = [response expectedContentLength];
     NSHTTPURLResponse *httpUrlResponse = (NSHTTPURLResponse *)response;
@@ -201,7 +218,12 @@ NSString * const TCHTTPStatusCode = @"httpStatus";
                                             TCHTTPStatusCode: @(httpUrlResponse.statusCode) }];
     }
     
-    if ((unsigned)[[UIDevice currentDevice] freeDiskSpace].longLongValue < self.expectedDataLength) {
+    //NSLog(@"%u", (unsigned)[[UIDevice currentDevice] freeDiskSpace].longLongValue);
+    //NSLog(@"%lld", self.expectedDataLength);
+    
+    long long expected = @(self.expectedDataLength).longLongValue;
+    if ([[UIDevice currentDevice] freeDiskSpace].longLongValue < expected && expected != -1) {
+
         error = [NSError errorWithDomain:kErrorDomain
                                     code:TCErrorNotEnoughFreeDiskSpace
                                 userInfo:@{ NSLocalizedDescriptionKey:NSLocalizedString(@"Not enough free disk space", @"") }];
@@ -220,6 +242,8 @@ NSString * const TCHTTPStatusCode = @"httpStatus";
         });
     }
     else {
+        self.error = error;
+        
         [self notifyFromError:error];
         [self cancelDownloadAndRemoveFile:NO];
     }
@@ -242,18 +266,21 @@ NSString * const TCHTTPStatusCode = @"httpStatus";
     
     dispatch_async(dispatch_get_main_queue(), ^{
         if (self.progressBlock) {
-            self.progressBlock(self.receivedDataLength, self.expectedDataLength, self.remainingTime);
+            self.progressBlock(self.receivedDataLength, self.expectedDataLength, self.remainingTime, self.progress);
         }
-        if ([self.delegate respondsToSelector:@selector(download:didReceiveData:onTotal:)]) {
+        if ([self.delegate respondsToSelector:@selector(download:didReceiveData:onTotal:progress:)]) {
             [self.delegate download:self
                      didReceiveData:self.receivedDataLength
-                            onTotal:self.expectedDataLength];
+                            onTotal:self.expectedDataLength
+                           progress:self.progress];
         }
     });
 }
 
 - (void)connectionDidFinishLoading:(NSURLConnection*)connection
 {
+    self.state = TCBlobDownloadStateDone;
+    
     [self.file writeData:self.receivedDataBuffer];
     [self.receivedDataBuffer setData:nil];
     
@@ -266,6 +293,8 @@ NSString * const TCHTTPStatusCode = @"httpStatus";
 
 - (void)cancelDownloadAndRemoveFile:(BOOL)remove
 {
+    self.state = TCBlobDownloadStateCancelled;
+    
     [self.connection cancel];
     
     NSFileManager *fm = [NSFileManager defaultManager];
@@ -295,7 +324,11 @@ NSString * const TCHTTPStatusCode = @"httpStatus";
 
 - (void)notifyFromError:(NSError *)error
 {
+<<<<<<< HEAD
     _state = TCBlobDownloadStateFailed;
+=======
+    self.state = TCBlobDownloadStateFailed;
+>>>>>>> FETCH_HEAD
     
     dispatch_async(dispatch_get_main_queue(), ^{
         if (self.errorBlock) {
@@ -309,7 +342,21 @@ NSString * const TCHTTPStatusCode = @"httpStatus";
 
 - (void)notifyFromCompletionWithSuccess:(BOOL)success pathToFile:(NSString *)pathToFile
 {
+<<<<<<< HEAD
     _state = TCBlobDownloadStateDone;
+=======
+    if (success) {
+        self.state = TCBlobDownloadStateDone;
+    }
+    else {
+        if (self.error) {
+            self.state = TCBlobDownloadStateFailed;
+        }
+        else {
+            self.state = TCBlobDownloadStateCancelled;
+        }
+    }
+>>>>>>> FETCH_HEAD
     
     dispatch_async(dispatch_get_main_queue(), ^{
         if (self.completeBlock) {
@@ -330,9 +377,8 @@ NSString * const TCHTTPStatusCode = @"httpStatus";
         [self.samplesOfDownloadedBytes removeObjectAtIndex:0];
     }
     
-    static uint64_t totalReceived;
-    [self.samplesOfDownloadedBytes addObject:[NSNumber numberWithUnsignedLongLong:self.receivedDataLength - totalReceived]];
-    totalReceived = self.receivedDataLength;
+    [self.samplesOfDownloadedBytes addObject:[NSNumber numberWithUnsignedLongLong:self.receivedDataLength - previousTotal]];
+    previousTotal = self.receivedDataLength;
     // Compute the speed rate on the average of the last seconds samples
     self.speedRate = [[self.samplesOfDownloadedBytes valueForKeyPath:@"@avg.longValue"] longValue];
 }
@@ -358,7 +404,13 @@ NSString * const TCHTTPStatusCode = @"httpStatus";
     if (_fileName) {
         return _fileName;
     }
+<<<<<<< HEAD
     return [[NSURL URLWithString:[self.downloadURL absoluteString]] lastPathComponent];
+=======
+    else {
+        return [[NSURL URLWithString:[self.downloadURL absoluteString]] lastPathComponent];
+    }
+>>>>>>> FETCH_HEAD
 }
 
 - (NSString *)pathToFile
@@ -373,10 +425,21 @@ NSString * const TCHTTPStatusCode = @"httpStatus";
 
 - (float)progress
 {
+<<<<<<< HEAD
     if (_expectedDataLength == 0)
         return 0;
     else
         return _receivedDataLength / _expectedDataLength;
+=======
+    return (_expectedDataLength == 0) ? 0 : (float)_receivedDataLength / (float)_expectedDataLength;
+}
+
+- (void)setError:(NSError *)error
+{
+    _error = error;
+    
+    self.state = TCBlobDownloadStateFailed;
+>>>>>>> FETCH_HEAD
 }
 
 @end
